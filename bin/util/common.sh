@@ -158,7 +158,12 @@ get_specific_version() {
 # args:
 # input - $1
 get_framework_version() {
-	local target_framework=$(grep -oPm1 "(?<=<TargetFramework>)[^<]+" $1/*.csproj)
+	local project_file=$(find $1 -name "*.csproj" | head -n 1)
+	if [[ -z "$project_file" ]]; then
+		echo ""
+		return
+	fi
+	local target_framework=$(grep -oPm1 "(?<=<TargetFramework>)[^<]+" "$project_file")
 	if [[ $target_framework =~ ";" ]]; then
 	 	echo $(cut -d ';' -f 1 <<< $target_framework)
 	else
@@ -169,7 +174,13 @@ get_framework_version() {
 # args:
 # input - $1
 get_runtime_framework_version() {
-	local runtime_framework_version=$(grep -oPm1 "(?<=<RuntimeFrameworkVersion>)[^<]+" $1/*.csproj)
+	local project_file=$(find $1 -name "*.csproj" | head -n 1)
+	local runtime_framework_version=""
+	
+	if [[ -n "$project_file" ]]; then
+		runtime_framework_version=$(grep -oPm1 "(?<=<RuntimeFrameworkVersion>)[^<]+" "$project_file")
+	fi
+
 	if [[ ${#runtime_framework_version} -eq 0 ]]; then
 		echo "Latest"
 	elif [[ $runtime_framework_version == *"rc"* ]] || [[ $runtime_framework_version == *"preview"* ]]; then

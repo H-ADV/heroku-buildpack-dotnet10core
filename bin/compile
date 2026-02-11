@@ -87,7 +87,21 @@ fi
 print "The dotnet runtime version: ${runtime_framework_version} to be installed"
 
 # Install dotnet
-$BP_DIR/bin/util/dotnet-install.sh --architecture x64 --channel $framework_version --version $runtime_framework_version --install-dir $BUILD_DIR/.dotnet
+# Default to 10.0 if not detected
+if [[ -z "$framework_version" ]]; then
+    print "Framework version not detected, defaulting to 10.0"
+    framework_version="10.0"
+fi
+
+# Construct install arguments
+install_args=(--architecture x64 --channel "$framework_version" --install-dir "$BUILD_DIR/.dotnet")
+
+if [[ "$runtime_framework_version" != "Latest" ]]; then
+    install_args+=(--version "$runtime_framework_version")
+fi
+
+# Install dotnet
+"$BP_DIR/bin/util/dotnet-install.sh" "${install_args[@]}"
 
 # Add symbolic link for dotnet
 if [[ $BUILD_DIR != '/app' ]]; then
