@@ -129,5 +129,56 @@ echo 'export CPATH="$INCLUDE_PATH"' >> $PROFILE_PATH
 echo 'export CPPPATH="$INCLUDE_PATH"' >> $PROFILE_PATH
 echo "export DOTNET_CLI_TELEMETRY_OPTOUT=1" >> $PROFILE_PATH
 
-# Build the project or solution
-dotnet build $TARGET_FILE --no-incremental --configuration Release
+# Identify Startup Project and Publish
+# 1. Try to find a project with launchSettings.json (usually the executable)
+# 2. If not, try to find a .csproj that is not a class library (checking output type or sdk)
+# 3. Fallback to TARGET_FILE, but if it is a solution, we must specify a project to publish if there are multiple.
+
+STARTUP_PROJECT=""
+LAUNCH_SETTINGS=$(find $BUILD_DIR -name launchSettings.json | head -n 1)
+
+if [[ -n "$LAUNCH_SETTINGS" ]]; then
+    STARTUP_PROJECT=$(dirname $(dirname "$LAUNCH_SETTINGS"))
+    print "Found launchSettings.json in $STARTUP_PROJECT. Using it as startup project."
+else
+    # Fallback search for a Web SDK project if possible, or just the first csproj found that isn't the solution dir if different
+    # For now, let's look for a csproj ending in .WebAPI or .Service or .App or .Web
+    STARTUP_PROJECT=$(find $BUILD_DIR \( -name "*.WebAPI.csproj" -o -name "*.Service.csproj" -o -name "*.App.csproj" -o -name "*.Web.csproj" \) | head -n 1)
+    
+    if [[ -z "$STARTUP_PROJECT" ]]; then
+         # Last resort: Try to find ANY csproj that triggers "Web" SDK or Exe output? Too complex for grep right now.
+         # Assume explicitly provided directory structure if known, or fail gracefully.
+         if [[ -d "$BUILD_DIR/HADV.OMS.Reports.WebAPI" ]]; then
+            STARTUP_PROJECT="$BUILD_DIR/HADV.OMS.Reports.WebAPI"
+            print "No explicit startup project detected. Defaulting to known path HADV.OMS.Reports.WebAPI."
+         else
+            print "Error: Could not determine startup project. Please add a launchSettings.json or ensure a WebAPI project exists."
+            exit 1
+         fi
+    else
+         STARTUP_PROJECT=$(dirname "$STARTUP_PROJECT")
+         print "Found candidate startup project: $STARTUP_PROJECT"
+    fi
+fi
+
+PUBLISH_DIR="out"
+print "Publishing ${STARTUP_PROJECT} to ${PUBLISH_DIR}..."
+
+# Run publish
+dotnet publish "$STARTUP_PROJECT" --output "$BUILD_DIR/$PUBLISH_DIR" --configuration Release
+
+# Determine Assembly Name from the .csproj file name in the startup directory
+# We re-find the .csproj in the STARTUP_PROJECT directory to be sure.
+CSPROJ=$(find "$STARTUP_PROJECT" -maxdepth 1 -name "*.csproj" | head -n 1)
+if [[ -n "$CSPROJ" ]]; then
+    APP_ASSEMBLY="$(basename "$CSPROJ" .csproj)"
+else
+    print "Error: Could not find .csproj in $STARTUP_PROJECT to determine assembly name."
+    exit 1
+fi
+
+print "Detected App Assembly Name: $APP_ASSEMBLY"
+
+# Export vars for release script and runtime
+echo "export APP_ASSEMBLY=$APP_ASSEMBLY" >> $PROFILE_PATH
+echo "export RELEASE_DIR=$PUBLISH_DIR" >> $PROFILE_PATH
