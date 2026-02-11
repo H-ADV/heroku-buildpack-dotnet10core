@@ -16,6 +16,14 @@ declare solution_name
 solution_name="$(get_project_sln_name $1)"
 
 if [[ ${#solution_name} -eq 0 ]]; then
+    # Check for .slnx file
+    if ls "$1"/*.slnx 1> /dev/null 2>&1; then
+        solution_name=$(basename "$1"/*.slnx .slnx)
+        echo "ASP.NET Core" && exit 0
+    fi
+fi
+
+if [[ ${#solution_name} -eq 0 ]]; then
 	### Declare local variables
 	declare project_name
 

@@ -100,7 +100,7 @@ remove_beginning_slash() {
 # args:
 # input - $1
 get_project_sln_file() {
-	local solutionfile=$(x=$(dirname $(find $1 -maxdepth 1 -type f | head -1)); while [[ "$x" =~ $1 ]] ; do find "$x" -maxdepth 1 -name *.sln; x=`dirname "$x"`; done)
+	local solutionfile=$(x=$(dirname $(find $1 -maxdepth 1 -type f | head -1)); while [[ "$x" =~ $1 ]] ; do find "$x" -maxdepth 1 \( -name "*.sln" -o -name "*.slnx" \); x=`dirname "$x"`; done)
 	echo $solutionfile
 }
 

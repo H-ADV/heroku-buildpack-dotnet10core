@@ -60,7 +60,7 @@ export ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-production}
 
 # Find the first .csproj or .sln file in the build directory
 PROJECT_FILE=$(find $BUILD_DIR -maxdepth 2 -name "*.csproj" -print -quit)
-SOLUTION_FILE=$(find $BUILD_DIR -maxdepth 2 -name "*.sln" -print -quit)
+SOLUTION_FILE=$(find $BUILD_DIR -maxdepth 2 \( -name "*.slnx" -o -name "*.sln" \) -print -quit)
 
 if [[ -z "$PROJECT_FILE" && -z "$SOLUTION_FILE" ]]; then
     print "Error: No project (.csproj) or solution (.sln) file found in the build directory."
