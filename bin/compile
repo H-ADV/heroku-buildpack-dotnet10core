@@ -103,10 +103,22 @@ fi
 # Install dotnet
 "$BP_DIR/bin/util/dotnet-install.sh" "${install_args[@]}"
 
+# Export variables for build-time execution
+export DOTNET_ROOT="$BUILD_DIR/.dotnet"
+export PATH="$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools"
+
 # Install dotnet-ef global tool
 print "Installing dotnet-ef global tool..."
-./.dotnet/dotnet tool install dotnet-ef --global --version 9.* || print "dotnet-ef tool install failed or already installed"
-# Creating a shim or ensuring it's on path is handled below by exporting ~/.dotnet/tools
+dotnet tool install dotnet-ef --global --version 9.* || print "dotnet-ef tool install failed or already installed"
+
+# ... (skip to migration part)
+
+    # Run migration
+    # Note: We use the installed dotnet and global tool
+    "$BUILD_DIR/.dotnet/dotnet" ef database update --project "$INFRA_PROJECT" --startup-project "$WEB_PROJECT" --configuration Release || {
+        print "Error: Migration failed."
+        exit 1
+    }
 
 # Add symbolic link for dotnet
 if [[ $BUILD_DIR != '/app' ]]; then
@@ -207,7 +219,7 @@ if [[ -n "$INFRA_PROJECT" && -n "$WEB_PROJECT" ]]; then
     # We need to ensure the environment variables for DB connection are present.
     # $ENV_DIR contains files named after env vars. We already exported them via export_env_dir.
     
-    ./.dotnet/dotnet ef database update --project "$INFRA_PROJECT" --startup-project "$WEB_PROJECT" --configuration Release || {
+    dotnet ef database update --project "$INFRA_PROJECT" --startup-project "$WEB_PROJECT" --configuration Release || {
         print "Error: Migration failed."
         exit 1
     }
