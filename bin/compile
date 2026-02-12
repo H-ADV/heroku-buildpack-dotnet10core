@@ -113,12 +113,7 @@ dotnet tool install dotnet-ef --global --version 9.* || print "dotnet-ef tool in
 
 # ... (skip to migration part)
 
-    # Run migration
-    # Note: We use the installed dotnet and global tool
-    "$BUILD_DIR/.dotnet/dotnet" ef database update --project "$INFRA_PROJECT" --startup-project "$WEB_PROJECT" --configuration Release || {
-        print "Error: Migration failed."
-        exit 1
-    }
+
 
 # Add symbolic link for dotnet
 if [[ $BUILD_DIR != '/app' ]]; then
