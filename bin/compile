@@ -103,6 +103,11 @@ fi
 # Install dotnet
 "$BP_DIR/bin/util/dotnet-install.sh" "${install_args[@]}"
 
+# Install dotnet-ef global tool
+print "Installing dotnet-ef global tool..."
+./.dotnet/dotnet tool install dotnet-ef --global --version 9.* || print "dotnet-ef tool install failed or already installed"
+# Creating a shim or ensuring it's on path is handled below by exporting ~/.dotnet/tools
+
 # Add symbolic link for dotnet
 if [[ $BUILD_DIR != '/app' ]]; then
 	# Subsequent buildpacks can still invoke it
