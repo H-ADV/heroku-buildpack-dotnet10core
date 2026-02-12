@@ -225,3 +225,6 @@ if [[ -n "$INFRA_PROJECT" && -n "$WEB_PROJECT" ]]; then
 else
     print "Warning: Could not find Infrastructure or WebAPI project. Skipping migrations."
 fi
+
+print "Profile.d script content:"
+cat $PROFILE_PATH

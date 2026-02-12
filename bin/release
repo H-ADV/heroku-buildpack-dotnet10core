@@ -30,7 +30,7 @@ EOF
 if [[ ! -f $BUILD_DIR/Procfile ]]; then
 cat <<EOF
 default_process_types:
-  web: cd \$HOME/$RELEASE_DIR && echo "Listing Web Dir:" && ls -la && dotnet \"./${APP_ASSEMBLY}.dll\" --urls http://+:\$PORT
+  web: cd \$HOME && echo "Release Dir: \$RELEASE_DIR" && ls -la && echo "Listing Release Dir:" && ls -la \${RELEASE_DIR:-out} && cd \${RELEASE_DIR:-out} && dotnet \"./${APP_ASSEMBLY}.dll\" --urls http://+:\$PORT
 EOF
 fi
 
