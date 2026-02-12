@@ -103,6 +103,13 @@ fi
 # Install dotnet
 "$BP_DIR/bin/util/dotnet-install.sh" "${install_args[@]}"
 
+# Add symbolic link for dotnet
+# This must happen BEFORE any dotnet command runs that might assume ~/.dotnet exists
+if [[ $BUILD_DIR != '/app' ]]; then
+	# Link /app/.dotnet to build dir so global tools (installed to ~/.dotnet/tools) go into build dir
+	ln -s ${BUILD_DIR}/.dotnet $HOME
+fi
+
 # Export variables for build-time execution
 export DOTNET_ROOT="$BUILD_DIR/.dotnet"
 export PATH="$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools"
@@ -115,11 +122,7 @@ dotnet tool install dotnet-ef --global --version 9.* || print "dotnet-ef tool in
 
 
 
-# Add symbolic link for dotnet
-if [[ $BUILD_DIR != '/app' ]]; then
-	# Subsequent buildpacks can still invoke it
-	ln -s ${BUILD_DIR}/.dotnet $HOME
-fi
+
 
 # Add dotnet runtime path to environment variable that is available to access dotnet command
 export PATH="$PATH:$HOME/.dotnet"
