@@ -190,3 +190,28 @@ print "Detected App Assembly Name: $APP_ASSEMBLY"
 # Export vars for release script and runtime
 echo "export APP_ASSEMBLY=$APP_ASSEMBLY" >> $PROFILE_PATH
 echo "export RELEASE_DIR=$PUBLISH_DIR" >> $PROFILE_PATH
+
+# Run Migrations
+print "Running Entity Framework Core Migrations..."
+
+# Find projects
+INFRA_PROJECT=$(find $BUILD_DIR -name "*.Infrastructure.csproj" | head -n 1)
+WEB_PROJECT=$(find $BUILD_DIR -name "*.WebAPI.csproj" | head -n 1)
+
+if [[ -n "$INFRA_PROJECT" && -n "$WEB_PROJECT" ]]; then
+    print "Infrastructure Project: $INFRA_PROJECT"
+    print "Web Project: $WEB_PROJECT"
+    
+    # Run migration
+    # Note: We use the installed dotnet and global tool
+    # We need to ensure the environment variables for DB connection are present.
+    # $ENV_DIR contains files named after env vars. We already exported them via export_env_dir.
+    
+    ./.dotnet/dotnet ef database update --project "$INFRA_PROJECT" --startup-project "$WEB_PROJECT" --configuration Release || {
+        print "Error: Migration failed."
+        exit 1
+    }
+    print "Migrations completed successfully."
+else
+    print "Warning: Could not find Infrastructure or WebAPI project. Skipping migrations."
+fi
