@@ -26,41 +26,26 @@ EOF
 #EOF
 #fi
 
-if [[ ! -f $BUILD_DIR/Procfile ]]; then
-cat <<EOF
-default_process_types:
-  web: cd \$HOME/$RELEASE_DIR && dotnet \"./${APP_ASSEMBLY}.dll\" --urls http://+:\$PORT
-EOF
-fi
-
 # Determine project paths for migration
-# We need to find the .csproj files again or rely on convention
 INFRA_PROJECT=$(find $BUILD_DIR -name "*.Infrastructure.csproj" | head -n 1)
 WEB_PROJECT=$(find $BUILD_DIR -name "*.WebAPI.csproj" | head -n 1)
 
+RELEASE_CMD=""
 if [[ -n "$INFRA_PROJECT" && -n "$WEB_PROJECT" ]]; then
-    # Convert to relative paths from BUILD_DIR for cleaner output, but absolute is fine too
-    # The command runs in $HOME (which is /app in slug)
-    # But files are in $HOME/...
-    
-    # We need to be careful about paths. 
-    # $BUILD_DIR is the current directory during build.
-    # At runtime, the app is at $HOME.
-    
-    # Let's assume standard structure:
-    # $HOME/HADV.OMS.Reports.Service/HADV.OMS.Reports.Infrastructure/HADV.OMS.Reports.Infrastructure.csproj
-    
-    # We can try to dynamically find them at runtime? No, release script runs at build time to generate YAML.
-    # So we generate a command that finds them or uses known paths.
-    
-    # Let's use the paths found in BUILD_DIR but replace BUILD_DIR with . (current dir at runtime)
-    # relative_infra=${INFRA_PROJECT#$BUILD_DIR/}
-    # relative_web=${WEB_PROJECT#$BUILD_DIR/}
-    
-    # Actually, simpler to just use the structure we know or find:
-    
+    # Construct the release command
+    # Added ls -la for debugging
+    RELEASE_CMD="release: cd \$HOME && echo \"Current Dir:\" && pwd && echo \"Listing Home:\" && ls -la && echo \"Listing Out:\" && ls -la $RELEASE_DIR && dotnet ef database update --project \"\$(find . -name *.Infrastructure.csproj | head -n 1)\" --startup-project \"\$(find . -name *.WebAPI.csproj | head -n 1)\""
+fi
+
+if [[ ! -f $BUILD_DIR/Procfile ]]; then
 cat <<EOF
-release: cd \$HOME && dotnet ef database update --project "\$(find . -name *.Infrastructure.csproj | head -n 1)" --startup-project "\$(find . -name *.WebAPI.csproj | head -n 1)"
+default_process_types:
+  web: cd \$HOME/$RELEASE_DIR && echo "Listing Web Dir:" && ls -la && dotnet \"./${APP_ASSEMBLY}.dll\" --urls http://+:\$PORT
 EOF
 
+    if [[ -n "$RELEASE_CMD" ]]; then
+        echo "  $RELEASE_CMD"
+    fi
 fi
+
+

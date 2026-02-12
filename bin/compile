@@ -172,6 +172,9 @@ print "Publishing ${STARTUP_PROJECT} to ${PUBLISH_DIR}..."
 # Run publish
 dotnet publish "$STARTUP_PROJECT" --output "$BUILD_DIR/$PUBLISH_DIR" --configuration Release
 
+print "Listing publish output directory:"
+ls -la "$BUILD_DIR/$PUBLISH_DIR"
+
 # Determine Assembly Name from the .csproj file name in the startup directory
 # We re-find the .csproj in the STARTUP_PROJECT directory to be sure.
 CSPROJ=$(find "$STARTUP_PROJECT" -maxdepth 1 -name "*.csproj" | head -n 1)
